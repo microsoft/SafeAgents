@@ -1,0 +1,47 @@
+docs/examples/
+│
+├── README.md                    Main documentation (404 lines)
+├── INDEX.md                     Quick reference guide (229 lines)
+│
+├── 00_hello_world.py            ⭐ Quick Start (110 lines)
+│   └── Simplest example - verify installation works
+│
+├── 01_basic_multi_agent.py      ⭐ Beginner (217 lines)
+│   ├── Creating agents with custom tools
+│   ├── Agent handoffs and collaboration
+│   ├── Framework selection (CLI args)
+│   └── Assessment integration (ARIA & DHARMA)
+│
+├── 02_attack_detection.py       ⭐⭐ Intermediate (455 lines)
+│   ├── Example 1: Simple tool detection
+│   ├── Example 2: Combining detectors (any_of/all_of)
+│   ├── Example 3: Custom detection functions
+│   ├── Example 4: Bash script detection
+│   └── Example 5: AND logic with all_of
+│
+├── 03_dataset_evaluation.py     ⭐⭐ Intermediate (360 lines)
+│   ├── Example 1: Basic dataset run
+│   ├── Example 2: Checkpoint and resume
+│   ├── Example 3: Framework comparison
+│   ├── Example 4: Custom subset selection
+│   ├── Example 5: Programmatic result analysis
+│   └── Example 6: ASB dataset
+│
+└── 04_special_agents.py         ⭐⭐⭐ Advanced (347 lines)
+    ├── Example 1: file_surfer agent
+    ├── Example 2: computer_terminal agent
+    ├── Example 3: Combining regular + special agents
+    └── Example 4: Safety evaluation best practices
+
+TOTAL: 7 files, 2,122 lines
+       5 Python examples (17 sub-examples)
+       2 Documentation files
+
+Quick Commands:
+  python 00_hello_world.py                           # Verify installation
+  python 01_basic_multi_agent.py                     # Learn basics
+  python 01_basic_multi_agent.py --framework autogen # Try different framework
+  python 02_attack_detection.py                      # All attack examples
+  python 02_attack_detection.py --example 3          # Custom detector
+  python 03_dataset_evaluation.py 3                  # Framework comparison
+  python 04_special_agents.py --example 1            # File surfer
