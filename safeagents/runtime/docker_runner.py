@@ -1,5 +1,5 @@
 import subprocess
-import tempfile
+import uuid
 import shutil
 from pathlib import Path
 from typing import Optional, Dict, Any
@@ -128,7 +128,7 @@ class DockerRunner:
             }
 
         # Create a unique run ID for this execution
-        run_id = f"run_{script_path.stem}_{Path(tempfile.mktemp()).name.split('/')[-1]}"
+        run_id = f"run_{script_path.stem}_{uuid.uuid4().hex[:8]}"
         run_log_dir = self.log_output_dir / run_id
 
         try:
