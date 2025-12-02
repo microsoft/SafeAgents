@@ -233,7 +233,7 @@ markitdown[all]==0.1.3
     #   autogen-ext
 marshmallow==3.26.1
     # via dataclasses-json
-mcp==1.19.0
+mcp==1.23.0
     # via openai-agents
 mdurl==0.1.2
     # via markdown-it-py
@@ -346,8 +346,8 @@ pygments==2.19.1
     # via rich
 pyjwt[crypto]==2.10.1
     # via
+    #   mcp
     #   msal
-    #   pyjwt
 pytest==7.3.2
     # via
     #   pytest-base-url
@@ -461,6 +461,7 @@ typing-extensions==4.13.1
     #   beautifulsoup4
     #   huggingface-hub
     #   langchain-core
+    #   mcp
     #   openai
     #   openai-agents
     #   pydantic
@@ -475,8 +476,10 @@ typing-extensions==4.13.1
     #   typing-inspection
 typing-inspect==0.9.0
     # via dataclasses-json
-typing-inspection==0.4.0
-    # via pydantic
+typing-inspection==0.4.2
+    # via
+    #   mcp
+    #   pydantic
 tzdata==2025.2
     # via pandas
 urllib3==2.3.0
