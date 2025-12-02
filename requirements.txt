@@ -189,7 +189,7 @@ langchain-core==0.3.79
     #   langgraph-swarm
 langchain-openai==0.3.35
     # via -r requirements.in
-langchain-text-splitters==0.3.8
+langchain-text-splitters==0.3.9
     # via langchain
 langgraph==0.6.11
     # via
