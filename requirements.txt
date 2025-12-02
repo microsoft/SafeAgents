@@ -170,11 +170,11 @@ jsonschema==4.23.0
     # via mcp
 jsonschema-specifications==2024.10.1
     # via jsonschema
-langchain==0.3.23
+langchain==0.3.26
     # via
     #   -r requirements.in
     #   langchain-community
-langchain-community==0.3.21
+langchain-community==0.3.27
     # via -r requirements.in
 langchain-core==0.3.79
     # via
