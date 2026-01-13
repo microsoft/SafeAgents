@@ -102,7 +102,7 @@ distro==1.9.0
     # via openai
 et-xmlfile==2.0.0
     # via openpyxl
-filelock==3.20.0
+filelock==3.20.3
     # via
     #   datasets
     #   huggingface-hub
