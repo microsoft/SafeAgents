@@ -362,7 +362,7 @@ python-dotenv==1.1.0
     # via
     #   magika
     #   pydantic-settings
-python-multipart==0.0.20
+python-multipart==0.0.22
     # via mcp
 python-pptx==1.0.2
     # via markitdown
