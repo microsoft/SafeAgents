@@ -297,7 +297,7 @@ pandas==2.2.3
     #   markitdown
 pdfminer-six==20250506
     # via markitdown
-pillow==11.1.0
+pillow==12.1.1
     # via
     #   -r requirements.in
     #   autogen-core
