@@ -1,3 +1,8 @@
+import asyncio
+from contextlib import AsyncExitStack
+
+from autogen_core.code_executor import CodeExecutor
+
 from ..base import Team, register_framework, Architecture
 from ..framework_types import Framework
 from ..client_factory import ClientFactory
@@ -17,6 +22,8 @@ class TeamAutogen(Team):
 
     def __init__(self, agents: list[Agent], architecture: Architecture | str,
                  termination_condition=None, max_turns=None):
+        self._code_executors: list[CodeExecutor] = []
+        self._run_lock = asyncio.Lock()
         super().__init__(agents, Framework.AUTOGEN, architecture, termination_condition, max_turns)
 
     def get_client(self):
@@ -105,7 +112,13 @@ class TeamAutogen(Team):
                     # This takes care of special agents like WebSurfer, FileSurfer, CoderAgent, etc.
                     from .special_agents.agents import get_special_agent
                     # Pass tracking callback to special agent for tool tracking
-                    agent = get_special_agent(agent, self.client, handoffs, tool_call_tracker=self.track_tool_call)
+                    agent = get_special_agent(
+                        agent,
+                        self.client,
+                        handoffs,
+                        tool_call_tracker=self.track_tool_call,
+                        register_executor=self._code_executors.append,
+                    )
                 else:
                     # This creates a generic Agent
                     agent = AssistantAgent(
@@ -165,6 +178,14 @@ class TeamAutogen(Team):
         Returns:
             dict: Execution result with logs, messages, and optional assessment scores
         """
+        async with self._run_lock:
+            async with AsyncExitStack() as resources:
+                for executor in self._code_executors:
+                    resources.push_async_callback(executor.stop)
+                    await executor.start()
+                return await self._run(task, verbose, assessment, attack_detector)
+
+    async def _run(self, task, verbose, assessment, attack_detector):
         from io import StringIO
         import sys
 
