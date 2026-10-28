@@ -37,13 +37,64 @@ def create_task_script(script_path: Path, task_query: str):
     script_content = f'''"""
 Task script to run in Docker container.
 """
+import ast
 import asyncio
 import json
+import math
+import operator
 from pathlib import Path
 from dotenv import load_dotenv
 from safeagents import Team, Agent, AgentConfig, tool
 
-load_dotenv()
+TASK_QUERY = {task_query!r}
+
+
+def _evaluate_expression(expression: str) -> int | float:
+    if len(expression) > 1024:
+        raise ValueError("Expression is too long")
+    tree = ast.parse(expression.strip(), mode="eval")
+    if sum(1 for _ in ast.walk(tree)) > 128:
+        raise ValueError("Expression is too complex")
+    operators = {{
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+        ast.FloorDiv: operator.floordiv,
+        ast.Mod: operator.mod,
+        ast.Pow: operator.pow,
+    }}
+
+    def evaluate(node, depth=0):
+        if depth > 16:
+            raise ValueError("Expression is too deeply nested")
+        if isinstance(node, ast.Constant) and type(node.value) in (int, float):
+            value = node.value
+        elif isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
+            operand = evaluate(node.operand, depth + 1)
+            value = operand if isinstance(node.op, ast.UAdd) else -operand
+        elif isinstance(node, ast.BinOp) and type(node.op) in operators:
+            left = evaluate(node.left, depth + 1)
+            right = evaluate(node.right, depth + 1)
+            if isinstance(node.op, ast.Pow):
+                if abs(right) > 1000:
+                    raise ValueError("Exponent is too large")
+                if isinstance(left, int) and isinstance(right, int) and right >= 0:
+                    if left.bit_length() * right > 4096:
+                        raise ValueError("Result is too large")
+            value = operators[type(node.op)](left, right)
+        else:
+            raise ValueError("Only numeric arithmetic is allowed")
+        if type(value) not in (int, float):
+            raise ValueError("Only real numbers are allowed")
+        if isinstance(value, int) and value.bit_length() > 4096:
+            raise ValueError("Result is too large")
+        if isinstance(value, float) and not math.isfinite(value):
+            raise ValueError("Result must be finite")
+        return value
+
+    return evaluate(tree.body)
+
 
 @tool()
 def search_tool(query: str) -> str:
@@ -54,58 +105,57 @@ def search_tool(query: str) -> str:
 def calculate_tool(expression: str) -> str:
     """Calculate mathematical expressions."""
     try:
-        result = eval(expression)
+        result = _evaluate_expression(expression)
         return f"Result: {{result}}"
-    except Exception as e:
+    except (SyntaxError, ValueError, ZeroDivisionError, OverflowError) as e:
         return f"Error: {{str(e)}}"
 
-# Create agents
-search_agent = Agent(config=AgentConfig(
-    name="SearchAgent",
-    tools=[search_tool],
-    system_message="You help search for information.",
-    description="Agent that searches for information"
-))
 
-calc_agent = Agent(config=AgentConfig(
-    name="CalcAgent",
-    tools=[calculate_tool],
-    system_message="You help with calculations.",
-    description="Agent that performs calculations"
-))
+async def main():
+    load_dotenv()
+    search_agent = Agent(config=AgentConfig(
+        name="SearchAgent",
+        tools=[search_tool],
+        system_message="You help search for information.",
+        description="Agent that searches for information"
+    ))
 
-# Create team
-team = Team.create(
-    agents=[search_agent, calc_agent],
-    framework="openai-agents",
-    architecture="centralized",
-    max_turns=10
-)
+    calc_agent = Agent(config=AgentConfig(
+        name="CalcAgent",
+        tools=[calculate_tool],
+        system_message="You help with calculations.",
+        description="Agent that performs calculations"
+    ))
 
-# Run task
-print("Running task in Docker...")
-result = asyncio.run(team.run(
-    "{task_query}",
-    verbose=False
-))
+    team = Team.create(
+        agents=[search_agent, calc_agent],
+        framework="openai-agents",
+        architecture="centralized",
+        max_turns=10
+    )
 
-# IMPORTANT: Save results to /SafeAgents/logs/ so they persist after container exits
-output_dir = Path("/SafeAgents/logs")
-output_dir.mkdir(parents=True, exist_ok=True)
+    print("Running task in Docker...")
+    result = await team.run(TASK_QUERY, verbose=False)
 
-result_file = output_dir / "task_result.json"
-with open(result_file, 'w') as f:
-    json.dump(result, f, indent=2)
+    # Save results in the mounted logs directory so they survive container removal.
+    output_dir = Path("/SafeAgents/logs")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    result_file = output_dir / "task_result.json"
+    with open(result_file, 'w') as f:
+        json.dump(result, f, indent=2)
 
-# Also save a summary
-summary_file = output_dir / "summary.txt"
-with open(summary_file, 'w') as f:
-    f.write(f"Task: {task_query}\\n")
-    f.write(f"Stop Reason: {{result['stop_reason']}}\\n")
-    f.write(f"Messages: {{len(result['messages'])}}\\n")
+    summary_file = output_dir / "summary.txt"
+    with open(summary_file, 'w') as f:
+        f.write(f"Task: {{TASK_QUERY}}\\n")
+        f.write(f"Stop Reason: {{result['stop_reason']}}\\n")
+        f.write(f"Messages: {{len(result['messages'])}}\\n")
 
-print(f"✅ Task completed: {{result['stop_reason']}}")
-print(f"📄 Results saved to {{result_file}}")
+    print(f"✅ Task completed: {{result['stop_reason']}}")
+    print(f"📄 Results saved to {{result_file}}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 '''
 
     script_path.write_text(script_content)

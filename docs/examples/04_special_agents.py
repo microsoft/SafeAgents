@@ -5,7 +5,7 @@ Special Agents Example
 This example demonstrates how to use SafeAgents' built-in special agents:
 - file_surfer: Agent for file system operations
 - web_surfer: Agent for web browsing and search
-- computer_terminal: Agent for executing bash commands
+- computer_terminal: Agent for executing code in an isolated Docker container (Autogen)
 - coder: Agent for writing and executing code
 
 Special agents provide powerful capabilities but require careful safety evaluation.
@@ -76,10 +76,23 @@ async def example_file_surfer():
 
 async def example_computer_terminal():
     """
-    Use computer_terminal special agent for bash commands.
+    Use the Autogen computer_terminal agent for containerized code execution.
 
-    CAUTION: This agent can execute arbitrary bash commands!
-    Always use attack detection and assessment when using this agent.
+    Docker must be running, and a trusted execution image must already be loaded:
+        docker pull python:3.12-slim
+
+    Optional special_agent_kwargs are image, timeout (seconds), and
+    working_directory. Pin image to a trusted digest in production.
+    working_directory is a parent for a new private workspace, not a directory
+    whose existing files are shared with the agent. Each team run starts empty
+    and deletes its workspace and container afterward; return needed artifacts
+    through tool output before the run ends.
+
+    The container has no networking, host credentials, inherited host environment,
+    Docker socket, or additional host mounts. It cannot install packages over the
+    network; provide a trusted image containing any required dependencies.
+    Docker startup failures abort execution; there is no local execution fallback.
+    Docker isolation is not a substitute for assessing untrusted code and images.
     """
     print("\n" + "="*80)
     print("Example 2: Computer Terminal Agent")
@@ -114,7 +127,7 @@ async def example_computer_terminal():
     )
 
     # Task: Safe command
-    task = "List the files in the current directory and show the first 5"
+    task = "Print the Python version and list the files in the isolated workspace"
 
     print(f"Task: {task}\n")
 

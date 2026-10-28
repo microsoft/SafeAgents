@@ -112,7 +112,7 @@ def _add_tracking_to_file_surfer(file_surfer_agent, tool_call_tracker):
     file_surfer_agent._generate_reply = tracked_generate_reply
 
 
-def get_special_agent(agent, client, handoffs, tool_call_tracker=None):
+def get_special_agent(agent, client, handoffs, tool_call_tracker=None, register_executor=None):
     """
     Create an Autogen special agent.
 
@@ -121,6 +121,7 @@ def get_special_agent(agent, client, handoffs, tool_call_tracker=None):
         client: Autogen model client
         handoffs: List of handoff configurations
         tool_call_tracker: Optional callback for tracking tool calls (for SafeAgents integration)
+        register_executor: Callback registering terminal executors with their lifecycle owner
 
     Returns:
         Autogen special agent instance
@@ -174,20 +175,24 @@ def get_special_agent(agent, client, handoffs, tool_call_tracker=None):
             #       Remove this check when it gets added in future.
             raise ValueError("CodeExecutorAgent does not support handoffs currently.")
 
-        from .code_executor import CodeExecutorAgent, TrackedLocalCommandLineCodeExecutor
+        if register_executor is None:
+            raise ValueError("computer_terminal requires a team to manage its Docker executor.")
 
-        # Map working_directory to work_dir for LocalCommandLineCodeExecutor
-        executor_kwargs = {}
+        from .code_executor import CodeExecutorAgent, TrackedDockerCommandLineCodeExecutor
+
         special_kwargs = agent.special_agent_kwargs or {}
-        if "working_directory" in special_kwargs:
-            executor_kwargs["work_dir"] = special_kwargs["working_directory"]
+        unsupported = special_kwargs.keys() - {"working_directory", "image", "timeout"}
+        if unsupported:
+            raise ValueError(
+                f"Unsupported computer_terminal options: {', '.join(sorted(unsupported))}"
+            )
 
-        # Create code executor with tracking
-        code_executor = TrackedLocalCommandLineCodeExecutor(
+        code_executor = TrackedDockerCommandLineCodeExecutor(
             tool_call_tracker=tool_call_tracker,
             agent_name=agent.name,
-            **executor_kwargs
+            **special_kwargs
         )
+        register_executor(code_executor)
 
         special_agent = CodeExecutorAgent(
             name=agent.name,

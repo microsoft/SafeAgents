@@ -25,6 +25,8 @@ anyio==4.9.0
     #   openai
     #   sse-starlette
     #   starlette
+asyncio-atexit==1.0.1
+    # via autogen-ext
 attrs==25.3.0
     # via
     #   aiohttp
@@ -39,7 +41,7 @@ autogen-core==0.5.1
     #   -r requirements.in
     #   autogen-agentchat
     #   autogen-ext
-autogen-ext[magentic-one,openai]==0.5.1
+autogen-ext[docker,magentic-one,openai]==0.5.1
     # via -r requirements.in
 azure-ai-documentintelligence==1.0.2
     # via markitdown
@@ -100,6 +102,8 @@ dill==0.4.0
     #   multiprocess
 distro==1.9.0
     # via openai
+docker==7.2.0
+    # via autogen-ext
 et-xmlfile==2.0.0
     # via openpyxl
 filelock==3.20.0
@@ -387,6 +391,7 @@ requests==2.32.3
     # via
     #   azure-core
     #   datasets
+    #   docker
     #   langchain
     #   langchain-community
     #   langsmith
@@ -481,6 +486,7 @@ tzdata==2025.2
     # via pandas
 urllib3==2.3.0
     # via
+    #   docker
     #   requests
     #   types-requests
 uvicorn==0.34.0

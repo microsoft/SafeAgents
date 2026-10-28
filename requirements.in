@@ -16,6 +16,6 @@ langgraph-swarm
 langgraph-supervisor
 autogen-core
 autogen-agentchat
-autogen-ext[magentic-one,openai]
+autogen-ext[docker,magentic-one,openai]
 termcolor
 datasets
